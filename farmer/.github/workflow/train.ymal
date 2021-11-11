@@ -1,0 +1,22 @@
+name: farmer
+on: [push]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    # optionally use a convenient Ubuntu LTS + DVC + CML image
+    container: docker://dvcorg/cml-py3:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Train model
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install-r requirements.txt
+          dvc repro
+
+          git petch --prune
+          dv metrics diff --show-md master >report.md
+
+          echo "## Validating results"
+          cml-publish by_region.png --md >> report.md
+          cml-send-comment report.md
